@@ -1,7 +1,9 @@
 // 点击图片放大查看（全站共用）：支持双指捏合缩放 / 双击放大 / 拖动查看
 (function () {
   var MIN = 1, MAX = 5;
-  var scale = 1, tx = 0, ty = 0;          // 当前变换
+  var scale = 1, tx = 0, ty = 0;          // 当前变换（scale 相对“铺满屏”的基准尺寸）
+  var baseW = 0, baseH = 0;               // 图片铺满屏时的显示宽高（scale=1 基准）
+  var natW = 0, natH = 0;                 // 原图像素宽高
   var img, stage, lb;
 
   function ensureBox() {
@@ -17,13 +19,34 @@
     document.body.appendChild(lb);
     stage = lb.querySelector('.lb-stage');
     img = lb.querySelector('img');
+    img.addEventListener('load', fit);
     lb.querySelector('.lb-close').addEventListener('click', close);
     bindGestures();
     return lb;
   }
 
+  // 计算“铺满屏”的基准显示尺寸（等比缩放进 stage，且不超过原图像素）
+  function fit() {
+    natW = img.naturalWidth || 0;
+    natH = img.naturalHeight || 0;
+    if (!natW || !natH) return;
+    var r = stage.getBoundingClientRect();
+    var k = Math.min(r.width / natW, r.height / natH); // 铺满屏的比例
+    baseW = natW * k;
+    baseH = natH * k;
+    reset();
+  }
+
   function apply() {
-    img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+    if (!baseW) { // 图片还没 load 完，先只定位
+      img.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+      return;
+    }
+    // 关键：用真实宽高驱动缩放 → 浏览器从原图重新光栅化，放大不糊；
+    // 平移仍用 translate（不引起重采样）。
+    img.style.width = (baseW * scale) + 'px';
+    img.style.height = (baseH * scale) + 'px';
+    img.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
     lb.classList.toggle('zoomed', scale > 1.01);
   }
   function reset() { scale = 1; tx = 0; ty = 0; apply(); }
@@ -88,9 +111,12 @@
 
   function open(src, cap) {
     ensureBox();
+    baseW = baseH = natW = natH = 0;      // 清掉上一张的基准，等新图 load 再算
+    img.style.width = ''; img.style.height = '';
     img.src = src;
     lb.querySelector('.lb-cap').textContent = cap || '';
     reset();
+    if (img.complete && img.naturalWidth) fit(); // 已缓存则立即 fit
     lb.classList.add('on');
     document.body.style.overflow = 'hidden';
   }
@@ -99,13 +125,19 @@
   }
 
   function clamp() {
-    // 限制平移，避免把图拖出可视区太远
+    // 限制平移，避免把图拖出可视区太远。宽高已含 scale，不再乘。
     var r = stage.getBoundingClientRect();
-    var maxX = (img.clientWidth * scale - r.width) / 2;
-    var maxY = (img.clientHeight * scale - r.height) / 2;
+    var maxX = (baseW * scale - r.width) / 2;
+    var maxY = (baseH * scale - r.height) / 2;
     maxX = Math.max(0, maxX); maxY = Math.max(0, maxY);
     tx = Math.min(maxX, Math.max(-maxX, tx));
     ty = Math.min(maxY, Math.max(-maxY, ty));
+  }
+
+  // 每张图的最大放大倍数：大图可放到接近原图像素（清晰），小图不过度放大
+  function maxScale() {
+    if (!baseW || !natW) return MAX;
+    return Math.min(MAX, Math.max(2.2, natW / baseW));
   }
 
   function center(e) {
@@ -124,7 +156,7 @@
   }
 
   function zoomTo(ns, fx, fy) {
-    ns = Math.min(MAX, Math.max(MIN, ns));
+    ns = Math.min(maxScale(), Math.max(MIN, ns));
     // 以焦点 (fx,fy) 为锚点缩放，保持焦点位置不动
     tx = fx - (fx - tx) * (ns / scale);
     ty = fy - (fy - ty) * (ns / scale);
@@ -143,4 +175,8 @@
     open(full || im.getAttribute('src'), im.getAttribute('data-cap') || im.getAttribute('alt') || '');
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  // 横竖屏/窗口变化时，重算铺满屏基准
+  window.addEventListener('resize', function () {
+    if (lb && lb.classList.contains('on') && img.naturalWidth) fit();
+  });
 })();
