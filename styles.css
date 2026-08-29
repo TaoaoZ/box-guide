@@ -204,10 +204,28 @@ body {
 .catband .lvchip { font-size: 12px; font-weight: 800; background: rgba(255,255,255,.26); padding: 4px 11px; border-radius: 999px; }
 .catband h2 { font-size: 22px; font-weight: 800; margin-top: 10px; }
 .catband .urg { margin-top: 6px; font-size: 13px; opacity: .96; display: flex; align-items: center; gap: 6px; }
-.band-1 { background: linear-gradient(135deg, #F05A5A, var(--c1-d)); }
-.band-2 { background: linear-gradient(135deg, #F5A24A, var(--c2-d)); }
-.band-3 { background: linear-gradient(135deg, #4DA0EC, var(--c3-d)); }
-.band-4 { background: linear-gradient(135deg, #2BC275, var(--c4-d)); }
+.band-1 {
+  background:
+    linear-gradient(100deg, var(--c1-d) 20%, rgba(183,28,28,.86) 48%, rgba(183,28,28,.42) 100%),
+    url("images/c1-1.jpg") center/cover no-repeat;
+}
+.band-2 {
+  background:
+    linear-gradient(100deg, var(--c2-d) 20%, rgba(197,106,0,.86) 48%, rgba(197,106,0,.42) 100%),
+    url("images/c2-1.jpg") center/cover no-repeat;
+}
+.band-3 {
+  background:
+    linear-gradient(100deg, var(--c3-d) 20%, rgba(27,95,175,.86) 48%, rgba(27,95,175,.42) 100%),
+    url("images/c3-1.jpg") center/cover no-repeat;
+}
+.band-4 {
+  background:
+    linear-gradient(100deg, var(--c4-d) 20%, rgba(27,128,73,.86) 48%, rgba(27,128,73,.42) 100%),
+    url("images/c4-1.jpg") center/cover no-repeat;
+}
+.band-1 h1, .band-2 h1, .band-3 h1, .band-4 h1 { text-shadow: 0 1px 5px rgba(0,0,0,.26); }
+.band-1 .sub, .band-2 .sub, .band-3 .sub, .band-4 .sub { text-shadow: 0 1px 4px rgba(0,0,0,.24); }
 
 /* 小节头 */
 .blk-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; margin-bottom: 10px; color: var(--ink); }
